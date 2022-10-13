@@ -8,13 +8,16 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        LineReader<Hospital> hospitalLineReader = new LineReader<>(new HospitalParser());
-        String filename = "C:\\Users\\ocean\\Downloads\\서울시 병의원 위치 정보.csv";
-        List<Hospital> hospitals = hospitalLineReader.readLines(filename);
+        FileController<Hospital> hospitalFileController = new FileController<>(new HospitalParser());
+        String filename = "C:\\Users\\ocean\\Downloads\\seoul_hospital_infos.csv";
+        List<Hospital> hospitals = hospitalFileController.readLines(filename);
 
         System.out.println(hospitals.size());
         for (Hospital hospital : hospitals) {
-            System.out.println(hospital.getId());
+            System.out.printf("%s,%s,%s,%s,%d,%s,%s\n",
+                hospital.getId(),hospital.getAddress(), hospital.getDistrict()
+                ,hospital.getCategory(), hospital.getEmergencyRoom(), hospital.getName(),
+                    hospital.getSubdivision());
         }
     }
 }
