@@ -33,6 +33,15 @@ public class Hospital {
         return sql;
     }
 
+    public String getTupleString() {
+        String sql = String.format(
+                "(\"%s\",\"%s\"," +"\"%s\"," +
+                "\"%s\"," +"%d," +"\"%s\"," +"\"%s\");",
+                this.id, this.address, this.district, this.category, this.emergencyRoom, this.name, this.subdivision);
+        return sql;
+    }
+
+
     private void setDistrict() {
         String[] splitted = this.address.split(" ");
         this.district = String.format("%s %s", splitted[0], splitted[1]);

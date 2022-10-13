@@ -2,8 +2,7 @@ package com.line;
 
 import com.line.parser.Parser;
 
-import java.io.BufferedReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -38,7 +37,26 @@ public class FileController<T> {
         return result;
     }
 
+    public void createANewFile(String filename) throws IOException {
+        File file = new File(filename);
+        file.createNewFile();
+        System.out.println("Have a file generated?:" + file.exists());
+    }
 
+    public void writeLines(List<String> lines, String filename) {
+        File file = new File(filename);
 
+        try {
+            BufferedWriter writer
+                    = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "utf-8"));
+            for (String str : lines) {
+                writer.write(str);
+            }
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("success");
+    }
 
 }
