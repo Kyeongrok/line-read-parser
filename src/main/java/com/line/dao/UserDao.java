@@ -7,20 +7,21 @@ import java.util.Map;
 
 public class UserDao {
 
-    private Connection makeConnection() throws SQLException {
+    private ConnectionMaker connectionMaker;
 
-        Map<String, String> env = System.getenv();
-        // DB접속 (ex sql workbeanch실행)
-        Connection c = DriverManager.getConnection(env.get("DB_HOST"),
-                env.get("DB_USER"), env.get("DB_PASSWORD"));
-        return c;
+    public UserDao() {
+        this.connectionMaker = new AWSConnectionMaker();
+    }
+
+    public UserDao(ConnectionMaker connectionMaker) {
+        this.connectionMaker = connectionMaker;
     }
 
     public void add(User user) {
         Map<String, String> env = System.getenv();
         try {
             // DB접속 (ex sql workbeanch실행)
-            Connection c = makeConnection();
+            Connection c = connectionMaker.makeConnection();
 
             // Query문 작성
             PreparedStatement pstmt = c.prepareStatement("INSERT INTO users(id, name, password) VALUES(?,?,?);");
@@ -44,7 +45,7 @@ public class UserDao {
         Connection c;
         try {
             // DB접속 (ex sql workbeanch실행)
-            c = makeConnection();
+            c = connectionMaker.makeConnection();
 
             // Query문 작성
             PreparedStatement pstmt = c.prepareStatement("SELECT * FROM users WHERE id = ?");
@@ -54,7 +55,7 @@ public class UserDao {
             ResultSet rs = pstmt.executeQuery();
             rs.next();
             User user = new User(rs.getString("id"), rs.getString("name"),
-                    rs.getString("name"));
+                    rs.getString("password"));
 
             rs.close();
             pstmt.close();
@@ -65,6 +66,14 @@ public class UserDao {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public int getCount() {
+        return 0;
+    }
+
+    public void deleteAll() {
+
     }
 
     public static void main(String[] args) {
