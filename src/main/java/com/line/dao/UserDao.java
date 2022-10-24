@@ -17,27 +17,36 @@ public class UserDao {
         this.connectionMaker = connectionMaker;
     }
 
-    public void add(User user) {
-        Map<String, String> env = System.getenv();
+    public void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException {
+        Connection c = null;
+        PreparedStatement pstmt = null;
         try {
-            // DB접속 (ex sql workbeanch실행)
-            Connection c = connectionMaker.makeConnection();
-
-            // Query문 작성
-            PreparedStatement pstmt = c.prepareStatement("INSERT INTO users(id, name, password) VALUES(?,?,?);");
-            pstmt.setString(1, user.getId());
-            pstmt.setString(2, user.getName());
-            pstmt.setString(3, user.getPassword());
-
+            c = connectionMaker.makeConnection();
+            pstmt = stmt.makeStatement(c);
             // Query문 실행
             pstmt.executeUpdate();
-
-            pstmt.close();
-            c.close();
-
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw e;
+        } finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException e) {
+                }
+            }
         }
+    }
+
+    public void add(User user) throws SQLException {
+        // DB접속 (ex sql workbeanch실행)
+        AddStrategy addStrategy = new AddStrategy(user);
+        jdbcContextWithStatementStrategy(addStrategy);
     }
 
     public User findById(String id) {
@@ -72,14 +81,13 @@ public class UserDao {
         return 0;
     }
 
-    public void deleteAll() {
-
-    }
-
-    public static void main(String[] args) {
-        UserDao userDao = new UserDao();
-        userDao.add(new User("7", "Ruru", "1234qwer"));
-//        User user = userDao.findById("6");
-//        System.out.println(user.getName());
+    public void deleteAll() throws SQLException {
+        jdbcContextWithStatementStrategy(new StatementStrategy() {
+            @Override
+            public PreparedStatement makeStatement(Connection conn) throws SQLException {
+                PreparedStatement stmt = conn.prepareStatement("delete from users");
+                return stmt;
+            }
+        });
     }
 }
