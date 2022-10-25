@@ -2,51 +2,33 @@ package com.line.dao;
 
 import com.line.domain.User;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Map;
 
 public class UserDao {
 
-    private ConnectionMaker connectionMaker;
+    private final DataSource dataSource;
+    private final JdbcContext jdbcContext;
 
-    public UserDao() {
-        this.connectionMaker = new AWSConnectionMaker();
+    public UserDao(DataSource dataSource) {
+        this.dataSource = dataSource;
+        this.jdbcContext = new JdbcContext(dataSource);
     }
 
-    public UserDao(ConnectionMaker connectionMaker) {
-        this.connectionMaker = connectionMaker;
-    }
-
-    public void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException {
-        Connection c = null;
-        PreparedStatement pstmt = null;
-        try {
-            c = connectionMaker.makeConnection();
-            pstmt = stmt.makeStatement(c);
-            // Query문 실행
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw e;
-        } finally {
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (SQLException e) {
-                }
-            }
-        }
-    }
-
-    public void add(User user) throws SQLException {
+    public void add(final User user) throws SQLException {
         // DB접속 (ex sql workbeanch실행)
-        AddStrategy addStrategy = new AddStrategy(user);
-        jdbcContextWithStatementStrategy(addStrategy);
+        jdbcContext.workWithStatementStrategy(new StatementStrategy() {
+            @Override
+            public PreparedStatement makeStatement(Connection conn) throws SQLException {
+                PreparedStatement pstmt = null;
+                pstmt = conn.prepareStatement("INSERT INTO users(id, name, password) VALUES(?,?,?);");
+                pstmt.setString(1, user.getId());
+                pstmt.setString(2, user.getName());
+                pstmt.setString(3, user.getPassword());
+                return pstmt;
+            }
+        });
     }
 
     public User findById(String id) {
@@ -54,7 +36,7 @@ public class UserDao {
         Connection c;
         try {
             // DB접속 (ex sql workbeanch실행)
-            c = connectionMaker.makeConnection();
+            c = dataSource.getConnection();
 
             // Query문 작성
             PreparedStatement pstmt = c.prepareStatement("SELECT * FROM users WHERE id = ?");
@@ -82,11 +64,11 @@ public class UserDao {
     }
 
     public void deleteAll() throws SQLException {
-        jdbcContextWithStatementStrategy(new StatementStrategy() {
+        // "delete from users"
+        jdbcContext.workWithStatementStrategy(new StatementStrategy() {
             @Override
             public PreparedStatement makeStatement(Connection conn) throws SQLException {
-                PreparedStatement stmt = conn.prepareStatement("delete from users");
-                return stmt;
+                return conn.prepareStatement("delete from users");
             }
         });
     }
